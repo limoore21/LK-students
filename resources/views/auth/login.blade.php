@@ -1,26 +1,29 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Вход</title>
-</head>
-<body>
+<x-guest-layout>
     <h2>Вход в систему</h2>
 
-    <form action="{{ route('login') }}" method="POST">
+    <form method="POST" action="{{ route('login') }}">
         @csrf
-        <div>
-            <label>Email:</label>
-            <input type="email" name="email" value="{{ old('email') }}" required>
-            @error('email') <span style="color:red">{{ $message }}</span> @enderror
-        </div>
-        <div>
-            <label>Пароль:</label>
-            <input type="password" name="password" required>
-        </div>
-        <button type="submit">Войти</button>
-    </form>
 
-    <p>Нет аккаунта? <a href="{{ route('register') }}">Зарегистрироваться</a></p>
-</body>
-</html>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" required autofocus>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Пароль</label>
+            <input type="password" name="password" id="password" required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="remember"> Запомнить меня
+            </label>
+        </div>
+
+        <button type="submit" class="btn">Войти</button>
+
+        <div class="links">
+            <a href="{{ route('register') }}">Нет аккаунта? Зарегистрироваться</a>
+        </div>
+    </form>
+</x-guest-layout>
