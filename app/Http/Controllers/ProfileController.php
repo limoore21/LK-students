@@ -2,51 +2,59 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\UpdateAvatarRequest;
+use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    public function edit(): View
+    /**
+     * Display the user's profile form.
+     */
+    public function edit(Request $request): View
     {
-        return view('profile.edit');
+        return view('profile.edit', [
+            'user' => $request->user(),
+        ]);
     }
 
-    public function updateAvatar(UpdateAvatarRequest $request): RedirectResponse
+    /**
+     * Update the user's profile information.
+     */
+    public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        $request->user()->fill($request->validated());
+
+        if ($request->user()->isDirty('email')) {
+            $request->user()->email_verified_at = null;
+        }
+
+        $request->user()->save();
+
+        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    }
+
+    /**
+     * Delete the user's account.
+     */
+    public function destroy(Request $request): RedirectResponse
+    {
+        $request->validateWithBag('userDeletion', [
+            'password' => ['required', 'current_password'],
+        ]);
+
         $user = $request->user();
 
-        if ($request->hasFile('avatar')) {
-            if ($user->avatar_path) {
-                Storage::disk('public')->delete($user->avatar_path);
-            }
+        Auth::logout();
 
-            $path = $request->file('avatar')->store('avatars', 'public');
+        $user->delete();
 
-            $user->forceFill([
-                'avatar_path' => $path,
-                'avatar_status' => 'pending',
-            ])->save();
-        }
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        return redirect()->route('profile.edit')->with('success', 'Аватар загружен и отправлен на модерацию.');
-    }
-
-    public function destroyAvatar(): RedirectResponse
-    {
-        $user = auth()->user();
-
-        if ($user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
-        }
-
-        $user->forceFill([
-            'avatar_path' => null,
-            'avatar_status' => 'none',
-        ])->save();
-
-        return redirect()->route('profile.edit')->with('success', 'Аватар удален.');
+        return Redirect::to('/');
     }
 }
