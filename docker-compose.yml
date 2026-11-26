@@ -1,1 +1,59 @@
-# Пока пусто
+name: Laravel 13 Project Containersation
+
+services:
+    web:
+        build: .
+        # ports:
+            # - "8000:8000"
+        environment:
+            APP_NAME: LK-Students
+            APP_ENV: production
+            APP_DEBUG: true
+            # Не хардкодим секретный ключ.
+            # Вместо этого создайте переменную окружения
+            # APP_KEY значением которой вы можете взять прямо из вашего .env
+            # Плюсом можно прокинуть значение в Github Secrets
+            APP_KEY: ${APP_KEY}
+            DB_CONNECTION: mysql
+            DB_HOST: db
+            DB_PORT: 3306
+            DB_DATABASE: lk_students
+            DB_USERNAME: root
+            # Тоже секрет.
+            DB_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - public_assets:/var/www/html/public
+            - storage_data:/var/www/html/storage
+        depends_on:
+            db:
+                condition: service_healthy
+    nginx:
+        image: nginx:1.27-alpine
+        restart: unless-stopped
+        ports:
+            - "80:80"
+        volumes:
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+            - public_assets:/var/www/html/public:ro
+        depends_on:
+            - web
+    db:
+        image: mysql:8.4
+        restart: unless-stopped
+        ports:
+            - "3307:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: lk_students
+        volumes:
+            - mysqldata:/var/lib/mysql
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+volumes:
+    mysqldata:
+    public_assets:
+    storage_data:

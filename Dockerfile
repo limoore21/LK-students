@@ -19,6 +19,7 @@ RUN composer dump-autoload --optimize
 
 FROM php:8.5-fpm-alpine
 
+
 RUN apk add --no-cache \
     libpng-dev \
     libzip-dev \
@@ -32,8 +33,8 @@ RUN apk add --no-cache \
     bcmath \
     gd \
     zip \
-    intl 
-    
+    intl
+
 WORKDIR /var/www/html
 
 COPY . .
@@ -43,6 +44,4 @@ COPY --from=frontend /app/public/build ./public/build
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-EXPOSE 80
-
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+EXPOSE 9000
