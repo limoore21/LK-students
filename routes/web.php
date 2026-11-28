@@ -1,42 +1,53 @@
 <?php
 
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\Curator\StudentProfileController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Sergeant\AvatarModerationController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('guest')->group(function () {
-    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-    Route::post('/register', [RegisterController::class, 'register']);
-
-    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login']);
-});
-
-Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', DashboardController::class)->name('dashboard');
-    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-    Route::delete('/profile/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
-
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
-
-    Route::middleware('role:curator')->prefix('curator')->group(function () {
-        Route::get('/students', [StudentProfileController::class, 'index'])->name('curator.students.index');
-        Route::get('/students/{user}/edit', [StudentProfileController::class, 'edit'])->name('curator.students.edit');
-        Route::put('/students/{user}', [StudentProfileController::class, 'update'])->name('curator.students.update');
-    });
-
-    Route::middleware('role:sergeant')->prefix('sergeant')->group(function () {
-        Route::get('/avatars', [AvatarModerationController::class, 'index'])->name('sergeant.avatars.index');
-        Route::post('/avatars/{user}/approve', [AvatarModerationController::class, 'approve'])->name('sergeant.avatars.approve');
-        Route::post('/avatars/{user}/reject', [AvatarModerationController::class, 'reject'])->name('sergeant.avatars.reject');
-    });
-});
-
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    return redirect()->route('login');
 });
+
+require __DIR__.'/auth.php';
+
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+
+// Профиль курсанта (только просмотр)
+Route::get('/profile', function () {
+    return view('profile.show');
+})->middleware('auth')->name('profile.show');
+
+// Загрузка аватарки
+Route::get('/avatar/upload', function () {
+    return view('avatar.upload');
+})->middleware('auth')->name('avatar.upload');
+
+Route::post('/avatar/upload', [App\Http\Controllers\AvatarController::class, 'store'])
+    ->middleware('auth')
+    ->name('avatar.store');
+
+
+// Модерация аватарок (только для старшины)
+Route::get('/sergeant/avatars', [App\Http\Controllers\Sergeant\AvatarModerationController::class, 'index'])
+    ->name('sergeant.avatars.index');
+
+Route::post('/sergeant/avatars/{user}/approve', [App\Http\Controllers\Sergeant\AvatarModerationController::class, 'approve'])
+    ->name('sergeant.avatars.approve');
+
+Route::post('/sergeant/avatars/{user}/reject', [App\Http\Controllers\Sergeant\AvatarModerationController::class, 'reject'])
+    ->name('sergeant.avatars.reject');
+
+
+// Панель куратора (только для curator и admin)
+Route::get('/curator/students', [App\Http\Controllers\Curator\StudentProfileController::class, 'index'])
+    ->middleware('auth')
+    ->name('curator.students.index');
+
+Route::get('/curator/students/{user}/edit', [App\Http\Controllers\Curator\StudentProfileController::class, 'edit'])
+    ->middleware('auth')
+    ->name('curator.students.edit');
+
+Route::put('/curator/students/{user}', [App\Http\Controllers\Curator\StudentProfileController::class, 'update'])
+    ->middleware('auth')
+    ->name('curator.students.update');
