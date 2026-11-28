@@ -7,6 +7,7 @@ Route::get('/', function () {
 });
 
 require __DIR__.'/auth.php';
+require __DIR__.'/survey-and-suggestions.php';
 
 Route::get('/dashboard', function () {
     return view('dashboard');
